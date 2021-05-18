@@ -5,7 +5,7 @@ Rebuilds ros2 ubuntu images images on raspberry pi using qemu static.
 ### Setup build environment using qemu and systemd-nspawn
 * Download the [raspios 64 bit image](https://downloads.raspberrypi.org/raspios_lite_arm64/images/)
 * Follow the instructions [here](https://wiki.debian.org/RaspberryPi/qemu-user-static) to expand and mount the image
-  * Expand the image about 1GB to allow room to update and install tools
+  * Expand the image about 2GB to allow room to update and install tools
 ### Installs script and build
 * Copy the installer script `ros_rpi_installer.py` to the image
 * Make a folder on the host to store images and build artifacts.
