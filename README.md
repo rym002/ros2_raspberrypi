@@ -9,19 +9,18 @@ Rebuilds ros2 ubuntu images images on raspberry pi using qemu static.
 ### Installs script and build
 The build will take time to compile all dependencies.
 * mount the loopback partition
-* copy the qemu aarch64 static binary to `<image root>/usr/bin`
-* `cd <image root>`
 * `git clone https://github.com/rym002/ros2_raspberrypi.git`
 * `cd ros2_raspberrypi`
 * `chmod +x run_image.sh`
 * Run the installer in the container 
-  * `./run_image.sh <repo path>`
-  * The `<repo path>` should be a directory outside the image to store the build and compiled artifacts.
-  * The script will create this directory
-  * The directory should be the **full path**, not relative
+  * `./run_image.sh <image path> <repo path>`
+    * the `<image path>` is the path to the image
+    * The `<repo path>` should be a directory outside the image to store the build and compiled artifacts.
+    * The directory should be the **full path**, not relative
+  * The script will copy the qemu exe to the image
   * This will run systemd-nspawn for the builder script
 * Wait ....
-#### What happening
+#### What's happening
 * Downloads the source from each build and install dependency.
 * Builds modules as the raspberry pi os release
 * Installs debs in a local repo
