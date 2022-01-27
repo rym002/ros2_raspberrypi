@@ -26,6 +26,7 @@ class EnvironmentManager:
         self.release = process.stdout.split('\n')[0]
         self.ros_modules = dict()
         self.parsed_args = parsed_args
+        self.architecture = None
 
     def find_or_create_module(self, name):
         if self.ros_modules.__contains__(name):
@@ -94,6 +95,7 @@ class EnvironmentManager:
         self.run_apt_get('install',
                          ['devscripts', 'apt-src', 'libssl-dev', 'dh-python'])
         self.download_misc_debs()
+        self.set_target_architecture()
 
     def run_apt_get(self, command, packages=None):
         apt_args = {
@@ -140,6 +142,16 @@ class EnvironmentManager:
                            stderr=subprocess.DEVNULL)
         else:
             print('rti-connext-dds-5.3.1_0.0.0-0_arm64.deb already downloaded')
+
+    def set_target_architecture(self):
+        process = subprocess.run(
+            ['dpkg-architecture', '-q', 'DEB_TARGET_ARCH'],
+            stdout=subprocess.PIPE,
+            check=True,
+            stderr=subprocess.DEVNULL,
+            cwd=EnvironmentManager.LOCAL_REPO_DIR,
+            universal_newlines=True)
+        self.architecture = process.stdout.split('\n')[0]
 
 
 envManager = None
@@ -205,7 +217,22 @@ class RosModule:
         self.run_apt_src('build')
         ver_proc = self.run_apt_src('version')
         self.verson = ver_proc.stdout.split('\n')[0]
-        self.deb_file = self.name + '_' + self.verson + '_arm64.deb'
+        self.deb_file = self.name + '_' + self.verson + '_' + self.find_arch() + '.deb'
+
+    def find_arch(self):
+        try:
+            subprocess.run([
+                'grep', 'Architecture: all',
+                self.src_dir + path.sep + 'debian' + path.sep + 'control'
+            ],
+                           check=True,
+                           stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE,
+                           universal_newlines=True)
+            arch = 'all'
+        except:
+            arch = envManager.architecture
+        return arch
 
     def move_deb_pkg(self):
         deb_location = EnvironmentManager.BUILD_DIR + path.sep + self.deb_file
@@ -229,16 +256,22 @@ class RosModule:
             self.move_deb_pkg()
             self.scan_packages()
             self.run_apt_src('remove')
+            self.clean_cache()
             self.built = True
         else:
             print(self.build)
             raise RuntimeError('Unable to build module {}'.format(self.name))
         self.log('Complete Building module')
 
+    def clean_cache(self):
+        self.log('Cleaning cache')
+        envManager.run_apt_get('clean')
+
     def apt_install_ros_module(self):
         self.prepare_ros_module()
         self.log('Installing module')
         envManager.run_apt_get('install', [self.name])
+        self.clean_cache()
 
     def prepare_build_deps(self):
         self.parse_dependencies(True)
